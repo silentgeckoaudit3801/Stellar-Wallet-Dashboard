@@ -58,6 +58,38 @@
                 <div id="transaction-result" class="result-box hidden"></div>
             </section>
 
+            <div id="payment-confirm-modal" class="modal-backdrop hidden" role="presentation">
+                <div class="modal" role="dialog" aria-modal="true" aria-labelledby="payment-confirm-title">
+                    <h2 id="payment-confirm-title">Confirm Payment</h2>
+                    <dl class="confirmation-details">
+                        <div>
+                            <dt>Destination</dt>
+                            <dd id="confirm-destination"></dd>
+                        </div>
+                        <div>
+                            <dt>Amount</dt>
+                            <dd id="confirm-amount"></dd>
+                        </div>
+                        <div>
+                            <dt>Asset</dt>
+                            <dd id="confirm-asset"></dd>
+                        </div>
+                        <div>
+                            <dt>Memo</dt>
+                            <dd id="confirm-memo"></dd>
+                        </div>
+                        <div>
+                            <dt>Network Fee</dt>
+                            <dd id="confirm-fee"></dd>
+                        </div>
+                    </dl>
+                    <div class="modal-actions">
+                        <button id="cancel-payment" type="button" class="secondary-button">Cancel</button>
+                        <button id="confirm-payment" type="button">Confirm and Send</button>
+                    </div>
+                </div>
+            </div>
+
             <section class="network-section">
                 <h2>Network</h2>
                 <select id="network-select">
