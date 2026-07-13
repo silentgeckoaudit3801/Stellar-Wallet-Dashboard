@@ -58,6 +58,20 @@
                 <div id="transaction-result" class="result-box hidden"></div>
             </section>
 
+            <section class="history-section">
+                <div class="section-heading">
+                    <h2>Transaction History</h2>
+                    <button id="refresh-history" class="icon-button" type="button" aria-label="Refresh transaction history">
+                        <span class="refresh-icon" aria-hidden="true">↻</span>
+                        <span class="refresh-label">Refresh</span>
+                    </button>
+                </div>
+                <div id="transaction-history" class="history-container">
+                    <p class="loading">Load a wallet to view recent transactions</p>
+                </div>
+                <button id="load-more-history" class="secondary-button hidden" type="button">Load More</button>
+            </section>
+
             <section class="network-section">
                 <h2>Network</h2>
                 <select id="network-select">
