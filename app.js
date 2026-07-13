@@ -1,5 +1,6 @@
 let currentKeypair = null;
 let currentNetwork = 'testnet';
+let copyPublicKeyTimer = null;
 
 // DOM Elements
 const secretKeyInput = document.getElementById('secret-key');
@@ -9,6 +10,8 @@ const generateWalletBtn = document.getElementById('generate-wallet');
 const walletInfo = document.getElementById('wallet-info');
 const walletFeedback = document.getElementById('wallet-feedback');
 const publicKeyDisplay = document.getElementById('public-key');
+const copyPublicKeyBtn = document.getElementById('copy-public-key');
+const copyPublicKeyStatus = document.getElementById('copy-public-key-status');
 const secretKeyDisplay = document.getElementById('secret-key-display');
 const balancesContainer = document.getElementById('balances');
 const refreshBalancesBtn = document.getElementById('refresh-balances');
@@ -26,6 +29,17 @@ toggleSecretBtn.addEventListener('click', () => {
     } else {
         secretKeyInput.type = 'password';
         toggleSecretBtn.textContent = 'Show';
+    }
+});
+
+copyPublicKeyBtn.addEventListener('click', async () => {
+    if (!currentKeypair) return;
+
+    try {
+        await copyText(currentKeypair.publicKey());
+        showCopyPublicKeyStatus('Public key copied.');
+    } catch (e) {
+        showCopyPublicKeyStatus('Unable to copy public key.', true);
     }
 });
 
@@ -73,14 +87,47 @@ refreshBalancesBtn.addEventListener('click', () => {
     loadBalances({ manualRefresh: true });
 });
 
+async function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.top = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    const copied = document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    if (!copied) {
+        throw new Error('Copy command failed');
+    }
+}
+
+function showCopyPublicKeyStatus(message, isError = false) {
+    clearTimeout(copyPublicKeyTimer);
+    copyPublicKeyStatus.textContent = message;
+    copyPublicKeyStatus.classList.toggle('copy-status-error', isError);
+
+    copyPublicKeyTimer = setTimeout(() => {
+        copyPublicKeyStatus.textContent = '';
+        copyPublicKeyStatus.classList.remove('copy-status-error');
+    }, 2000);
+}
+
 function setRefreshButtonState(isLoading) {
     if (!refreshBalancesBtn) return;
 
     refreshBalancesBtn.disabled = isLoading;
     refreshBalancesBtn.classList.toggle('is-loading', isLoading);
     refreshBalancesBtn.innerHTML = isLoading
-        ? '<span class="refresh-icon" aria-hidden="true">⟳</span><span class="refresh-label">Refreshing…</span>'
-        : '<span class="refresh-icon" aria-hidden="true">↻</span><span class="refresh-label">Refresh</span>';
+        ? '<span class="refresh-icon" aria-hidden="true">âŸ³</span><span class="refresh-label">Refreshingâ€¦</span>'
+        : '<span class="refresh-icon" aria-hidden="true">â†»</span><span class="refresh-label">Refresh</span>';
 }
 
 function renderMessage(container, type, title, message) {
@@ -94,7 +141,7 @@ function renderMessage(container, type, title, message) {
 
     const icon = document.createElement('span');
     icon.className = 'message-icon';
-    icon.textContent = type === 'error' ? '⚠' : type === 'success' ? '✓' : 'ℹ';
+    icon.textContent = type === 'error' ? 'âš ' : type === 'success' ? 'âœ“' : 'â„¹';
 
     const body = document.createElement('div');
     body.className = 'message-body';
@@ -109,7 +156,7 @@ function renderMessage(container, type, title, message) {
     dismissButton.type = 'button';
     dismissButton.className = 'message-dismiss';
     dismissButton.setAttribute('aria-label', 'Dismiss message');
-    dismissButton.textContent = '×';
+    dismissButton.textContent = 'Ã—';
     dismissButton.addEventListener('click', () => {
         messageBox.remove();
         if (!container.hasChildNodes()) {
@@ -128,6 +175,8 @@ function showWalletInfo() {
     walletInfo.classList.remove('hidden');
     publicKeyDisplay.textContent = currentKeypair.publicKey();
     secretKeyDisplay.textContent = currentKeypair.secret();
+    copyPublicKeyBtn.disabled = false;
+    showCopyPublicKeyStatus('');
 }
 
 // Get server based on network
