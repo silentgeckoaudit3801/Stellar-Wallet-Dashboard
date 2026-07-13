@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>💧 Stellar Wallet Dashboard</h1>
+            <h1>ðŸ’§ Stellar Wallet Dashboard</h1>
         </header>
 
         <main>
@@ -35,7 +35,7 @@
                 <div class="section-heading">
                     <h2>Balances</h2>
                     <button id="refresh-balances" class="icon-button" type="button" aria-label="Refresh balances">
-                        <span class="refresh-icon" aria-hidden="true">↻</span>
+                        <span class="refresh-icon" aria-hidden="true">â†»</span>
                         <span class="refresh-label">Refresh</span>
                     </button>
                 </div>
@@ -54,6 +54,23 @@
                     <label for="amount">Amount (XLM):</label>
                     <input type="number" id="amount" step="0.0000001" placeholder="0.0">
                 </div>
+                <div class="memo-grid">
+                    <div class="input-group">
+                        <label for="memo-type">Memo Type:</label>
+                        <select id="memo-type">
+                            <option value="none">None</option>
+                            <option value="text">Text</option>
+                            <option value="id">ID</option>
+                            <option value="hash">Hash</option>
+                            <option value="return">Return</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="memo-value">Memo Value:</label>
+                        <input type="text" id="memo-value" placeholder="Optional memo">
+                    </div>
+                </div>
+                <p id="memo-help" class="field-help">Text memos support up to 28 UTF-8 bytes. Hash and return memos require 64 hex characters.</p>
                 <button id="send-payment">Send Payment</button>
                 <div id="transaction-result" class="result-box hidden"></div>
             </section>
