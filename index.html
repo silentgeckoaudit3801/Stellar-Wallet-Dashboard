@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>💧 Stellar Wallet Dashboard</h1>
+            <h1>ðŸ’§ Stellar Wallet Dashboard</h1>
         </header>
 
         <main>
@@ -26,8 +26,13 @@
                 </div>
                 <div id="wallet-feedback" class="result-box hidden"></div>
                 <div id="wallet-info" class="info-box hidden">
-                    <p><strong>Public Key:</strong> <span id="public-key"></span></p>
+                    <p class="key-row">
+                        <strong>Public Key:</strong>
+                        <span id="public-key"></span>
+                        <button id="copy-public-key" class="copy-button" type="button" aria-label="Copy public key">Copy</button>
+                    </p>
                     <p><strong>Secret Key:</strong> <span id="secret-key-display"></span></p>
+                    <p id="copy-public-key-status" class="copy-status" aria-live="polite"></p>
                 </div>
             </section>
 
@@ -35,7 +40,7 @@
                 <div class="section-heading">
                     <h2>Balances</h2>
                     <button id="refresh-balances" class="icon-button" type="button" aria-label="Refresh balances">
-                        <span class="refresh-icon" aria-hidden="true">↻</span>
+                        <span class="refresh-icon" aria-hidden="true">â†»</span>
                         <span class="refresh-label">Refresh</span>
                     </button>
                 </div>
