@@ -82,6 +82,22 @@ button:hover {
     background: #5568d3;
 }
 
+.secondary-button {
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    color: #374151;
+}
+
+.secondary-button:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
 .button-group {
     display: flex;
     gap: 10px;
@@ -214,6 +230,73 @@ button:hover {
 
 .balance-item:last-child {
     border-bottom: none;
+}
+
+.modal-backdrop {
+    align-items: center;
+    background: rgba(17, 24, 39, 0.7);
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    padding: 20px;
+    position: fixed;
+    z-index: 10;
+}
+
+.modal-backdrop.hidden {
+    display: none;
+}
+
+.modal {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    max-width: 520px;
+    padding: 24px;
+    width: 100%;
+}
+
+.confirmation-details {
+    display: grid;
+    gap: 12px;
+    margin: 18px 0 22px;
+}
+
+.confirmation-details div {
+    display: grid;
+    gap: 4px;
+}
+
+.confirmation-details dt {
+    color: #666;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.confirmation-details dd {
+    color: #222;
+    overflow-wrap: anywhere;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+@media (max-width: 520px) {
+    .modal {
+        padding: 18px;
+    }
+
+    .modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .modal-actions button {
+        width: 100%;
+    }
 }
 
 .success {
