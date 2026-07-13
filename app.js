@@ -12,6 +12,11 @@ const publicKeyDisplay = document.getElementById('public-key');
 const secretKeyDisplay = document.getElementById('secret-key-display');
 const balancesContainer = document.getElementById('balances');
 const refreshBalancesBtn = document.getElementById('refresh-balances');
+const trustlinesContainer = document.getElementById('trustlines');
+const trustlineForm = document.getElementById('trustline-form');
+const trustlineAssetCodeInput = document.getElementById('trustline-asset-code');
+const trustlineIssuerInput = document.getElementById('trustline-issuer');
+const trustlineResult = document.getElementById('trustline-result');
 const destinationInput = document.getElementById('destination');
 const amountInput = document.getElementById('amount');
 const sendPaymentBtn = document.getElementById('send-payment');
@@ -144,6 +149,125 @@ function getNetworkPassphrase() {
         : StellarSdk.Networks.TESTNET;
 }
 
+function getIssuedAsset(balance) {
+    return new StellarSdk.Asset(balance.asset_code, balance.asset_issuer);
+}
+
+function validateAssetCode(assetCode) {
+    return /^[A-Z0-9]{1,12}$/.test(assetCode);
+}
+
+function renderTrustlines(balances = []) {
+    const trustlines = balances.filter(balance => balance.asset_type !== 'native');
+    trustlinesContainer.innerHTML = '';
+
+    if (!currentKeypair) {
+        trustlinesContainer.innerHTML = '<p class="loading">Load a wallet to view trustlines</p>';
+        return;
+    }
+
+    if (!trustlines.length) {
+        trustlinesContainer.innerHTML = '<p class="empty-state">No trustlines found for this wallet.</p>';
+        return;
+    }
+
+    trustlines.forEach(balance => {
+        const item = document.createElement('div');
+        item.className = 'trustline-item';
+
+        const details = document.createElement('div');
+        details.className = 'trustline-details';
+
+        const title = document.createElement('strong');
+        title.textContent = balance.asset_code;
+
+        const issuer = document.createElement('span');
+        issuer.textContent = `Issuer: ${balance.asset_issuer}`;
+
+        const balanceText = document.createElement('span');
+        balanceText.textContent = `Balance: ${balance.balance}`;
+
+        details.appendChild(title);
+        details.appendChild(issuer);
+        details.appendChild(balanceText);
+
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'danger-button';
+        removeButton.textContent = 'Remove';
+        removeButton.addEventListener('click', () => removeTrustline(balance));
+
+        item.appendChild(details);
+        item.appendChild(removeButton);
+        trustlinesContainer.appendChild(item);
+    });
+}
+
+async function submitChangeTrust(asset, limit) {
+    const server = getServer();
+    const sourceAccount = await server.loadAccount(currentKeypair.publicKey());
+    const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+        fee: StellarSdk.BASE_FEE,
+        networkPassphrase: getNetworkPassphrase()
+    })
+        .addOperation(StellarSdk.Operation.changeTrust({
+            asset,
+            limit
+        }))
+        .setTimeout(30)
+        .build();
+
+    transaction.sign(currentKeypair);
+    return server.submitTransaction(transaction);
+}
+
+async function removeTrustline(balance) {
+    if (!currentKeypair) return;
+
+    try {
+        renderMessage(trustlineResult, 'info', 'Removing trustline', `Submitting removal for ${balance.asset_code}.`);
+        const result = await submitChangeTrust(getIssuedAsset(balance), '0');
+        renderMessage(trustlineResult, 'success', 'Trustline removed', `Transaction hash: ${result.hash}`);
+        loadBalances();
+    } catch (e) {
+        renderMessage(trustlineResult, 'error', 'Trustline removal failed', e.message || 'The trustline could not be removed.');
+    }
+}
+
+trustlineForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    if (!currentKeypair) {
+        renderMessage(trustlineResult, 'error', 'Wallet required', 'Load or generate a wallet before adding a trustline.');
+        return;
+    }
+
+    const assetCode = trustlineAssetCodeInput.value.trim().toUpperCase();
+    const issuer = trustlineIssuerInput.value.trim();
+
+    if (!validateAssetCode(assetCode)) {
+        renderMessage(trustlineResult, 'error', 'Invalid asset code', 'Use 1 to 12 uppercase letters or numbers.');
+        return;
+    }
+
+    try {
+        StellarSdk.Keypair.fromPublicKey(issuer);
+    } catch (e) {
+        renderMessage(trustlineResult, 'error', 'Invalid issuer', 'Enter a valid Stellar issuer public key.');
+        return;
+    }
+
+    try {
+        renderMessage(trustlineResult, 'info', 'Adding trustline', `Submitting trustline for ${assetCode}.`);
+        const result = await submitChangeTrust(new StellarSdk.Asset(assetCode, issuer));
+        renderMessage(trustlineResult, 'success', 'Trustline added', `Transaction hash: ${result.hash}`);
+        trustlineForm.reset();
+        loadBalances();
+    } catch (e) {
+        renderMessage(trustlineResult, 'error', 'Trustline failed', e.message || 'The trustline could not be added.');
+    }
+});
+
 // Load balances
 async function loadBalances(options = {}) {
     if (!currentKeypair) return;
@@ -162,9 +286,11 @@ async function loadBalances(options = {}) {
         balancesContainer.innerHTML = '';
         if (!account.balances.length) {
             balancesContainer.innerHTML = '<p class="empty-state">This account does not have any balances yet.</p>';
+            renderTrustlines([]);
             return;
         }
 
+        renderTrustlines(account.balances);
         account.balances.forEach(balance => {
             const div = document.createElement('div');
             div.className = 'balance-item';
@@ -173,6 +299,7 @@ async function loadBalances(options = {}) {
             balancesContainer.appendChild(div);
         });
     } catch (e) {
+        renderTrustlines([]);
         renderMessage(balancesContainer, 'error', 'Unable to load balances', e.message || 'The account could not be reached.');
     } finally {
         if (manualRefresh) {
