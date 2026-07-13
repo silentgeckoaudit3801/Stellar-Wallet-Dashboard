@@ -44,6 +44,25 @@
                 </div>
             </section>
 
+            <section class="trustline-section">
+                <h2>Trustlines</h2>
+                <div id="trustlines" class="trustlines-container">
+                    <p class="loading">Load a wallet to view trustlines</p>
+                </div>
+                <form id="trustline-form" class="trustline-form">
+                    <div class="input-group">
+                        <label for="trustline-asset-code">Asset Code:</label>
+                        <input type="text" id="trustline-asset-code" maxlength="12" placeholder="USDC">
+                    </div>
+                    <div class="input-group">
+                        <label for="trustline-issuer">Issuer Address:</label>
+                        <input type="text" id="trustline-issuer" placeholder="G...">
+                    </div>
+                    <button id="add-trustline" type="submit">Add Trustline</button>
+                </form>
+                <div id="trustline-result" class="result-box hidden"></div>
+            </section>
+
             <section class="transaction-section">
                 <h2>Send Payment</h2>
                 <div class="input-group">
