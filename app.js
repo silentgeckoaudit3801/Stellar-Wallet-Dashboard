@@ -1,5 +1,6 @@
 let currentKeypair = null;
 let currentNetwork = 'testnet';
+let copySecretKeyTimer = null;
 
 // DOM Elements
 const secretKeyInput = document.getElementById('secret-key');
@@ -10,6 +11,11 @@ const walletInfo = document.getElementById('wallet-info');
 const walletFeedback = document.getElementById('wallet-feedback');
 const publicKeyDisplay = document.getElementById('public-key');
 const secretKeyDisplay = document.getElementById('secret-key-display');
+const copySecretKeyBtn = document.getElementById('copy-secret-key');
+const copySecretKeyStatus = document.getElementById('copy-secret-key-status');
+const secretCopyModal = document.getElementById('secret-copy-modal');
+const confirmCopySecretKeyBtn = document.getElementById('confirm-copy-secret-key');
+const cancelCopySecretKeyBtn = document.getElementById('cancel-copy-secret-key');
 const balancesContainer = document.getElementById('balances');
 const refreshBalancesBtn = document.getElementById('refresh-balances');
 const destinationInput = document.getElementById('destination');
@@ -26,6 +32,38 @@ toggleSecretBtn.addEventListener('click', () => {
     } else {
         secretKeyInput.type = 'password';
         toggleSecretBtn.textContent = 'Show';
+    }
+});
+
+copySecretKeyBtn.addEventListener('click', () => {
+    if (!currentKeypair) return;
+    openSecretCopyModal();
+});
+
+confirmCopySecretKeyBtn.addEventListener('click', async () => {
+    if (!currentKeypair) return;
+
+    try {
+        await copyText(currentKeypair.secret());
+        closeSecretCopyModal();
+        showCopySecretKeyStatus('Secret key copied. Keep it private.');
+    } catch (e) {
+        closeSecretCopyModal();
+        showCopySecretKeyStatus('Unable to copy secret key.', true);
+    }
+});
+
+cancelCopySecretKeyBtn.addEventListener('click', closeSecretCopyModal);
+
+secretCopyModal.addEventListener('click', (event) => {
+    if (event.target === secretCopyModal) {
+        closeSecretCopyModal();
+    }
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !secretCopyModal.classList.contains('hidden')) {
+        closeSecretCopyModal();
     }
 });
 
@@ -73,14 +111,57 @@ refreshBalancesBtn.addEventListener('click', () => {
     loadBalances({ manualRefresh: true });
 });
 
+async function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.top = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    const copied = document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    if (!copied) {
+        throw new Error('Copy command failed');
+    }
+}
+
+function openSecretCopyModal() {
+    secretCopyModal.classList.remove('hidden');
+    confirmCopySecretKeyBtn.focus();
+}
+
+function closeSecretCopyModal() {
+    secretCopyModal.classList.add('hidden');
+    copySecretKeyBtn.focus();
+}
+
+function showCopySecretKeyStatus(message, isError = false) {
+    clearTimeout(copySecretKeyTimer);
+    copySecretKeyStatus.textContent = message;
+    copySecretKeyStatus.classList.toggle('copy-status-error', isError);
+
+    copySecretKeyTimer = setTimeout(() => {
+        copySecretKeyStatus.textContent = '';
+        copySecretKeyStatus.classList.remove('copy-status-error');
+    }, 2000);
+}
+
 function setRefreshButtonState(isLoading) {
     if (!refreshBalancesBtn) return;
 
     refreshBalancesBtn.disabled = isLoading;
     refreshBalancesBtn.classList.toggle('is-loading', isLoading);
     refreshBalancesBtn.innerHTML = isLoading
-        ? '<span class="refresh-icon" aria-hidden="true">⟳</span><span class="refresh-label">Refreshing…</span>'
-        : '<span class="refresh-icon" aria-hidden="true">↻</span><span class="refresh-label">Refresh</span>';
+        ? '<span class="refresh-icon" aria-hidden="true">âŸ³</span><span class="refresh-label">Refreshingâ€¦</span>'
+        : '<span class="refresh-icon" aria-hidden="true">â†»</span><span class="refresh-label">Refresh</span>';
 }
 
 function renderMessage(container, type, title, message) {
@@ -94,7 +175,7 @@ function renderMessage(container, type, title, message) {
 
     const icon = document.createElement('span');
     icon.className = 'message-icon';
-    icon.textContent = type === 'error' ? '⚠' : type === 'success' ? '✓' : 'ℹ';
+    icon.textContent = type === 'error' ? 'âš ' : type === 'success' ? 'âœ“' : 'â„¹';
 
     const body = document.createElement('div');
     body.className = 'message-body';
@@ -109,7 +190,7 @@ function renderMessage(container, type, title, message) {
     dismissButton.type = 'button';
     dismissButton.className = 'message-dismiss';
     dismissButton.setAttribute('aria-label', 'Dismiss message');
-    dismissButton.textContent = '×';
+    dismissButton.textContent = 'Ã—';
     dismissButton.addEventListener('click', () => {
         messageBox.remove();
         if (!container.hasChildNodes()) {
@@ -128,6 +209,8 @@ function showWalletInfo() {
     walletInfo.classList.remove('hidden');
     publicKeyDisplay.textContent = currentKeypair.publicKey();
     secretKeyDisplay.textContent = currentKeypair.secret();
+    copySecretKeyBtn.disabled = false;
+    showCopySecretKeyStatus('');
 }
 
 // Get server based on network
