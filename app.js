@@ -1,5 +1,6 @@
 let currentKeypair = null;
 let currentNetwork = 'testnet';
+let currentAccount = null;
 
 // DOM Elements
 const secretKeyInput = document.getElementById('secret-key');
@@ -17,6 +18,14 @@ const amountInput = document.getElementById('amount');
 const sendPaymentBtn = document.getElementById('send-payment');
 const transactionResult = document.getElementById('transaction-result');
 const networkSelect = document.getElementById('network-select');
+const multisigInfo = document.getElementById('multisig-info');
+const signerPublicKeyInput = document.getElementById('signer-public-key');
+const signerWeightInput = document.getElementById('signer-weight');
+const addSignerBtn = document.getElementById('add-signer');
+const transactionXdrInput = document.getElementById('transaction-xdr');
+const signerSecretKeyInput = document.getElementById('signer-secret-key');
+const signTransactionBtn = document.getElementById('sign-transaction');
+const multisigResult = document.getElementById('multisig-result');
 
 // Toggle secret key visibility
 toggleSecretBtn.addEventListener('click', () => {
@@ -123,11 +132,72 @@ function renderMessage(container, type, title, message) {
     container.appendChild(messageBox);
 }
 
+function isValidPublicKey(value) {
+    return typeof value === 'string' && StellarSdk.StrKey.isValidEd25519PublicKey(value);
+}
+
+function isValidSecretKey(value) {
+    return typeof value === 'string' && StellarSdk.StrKey.isValidEd25519SecretSeed(value);
+}
+
+function renderMultisigInfo(account) {
+    if (!multisigInfo) return;
+
+    multisigInfo.innerHTML = '';
+    if (!account) {
+        multisigInfo.innerHTML = '<p class="loading">Load a wallet to view multisig details</p>';
+        return;
+    }
+
+    const thresholdList = document.createElement('dl');
+    thresholdList.className = 'threshold-grid';
+    const thresholds = [
+        ['Low', account.thresholds.low_threshold],
+        ['Medium', account.thresholds.med_threshold],
+        ['High', account.thresholds.high_threshold]
+    ];
+
+    thresholds.forEach(([label, value]) => {
+        const term = document.createElement('dt');
+        term.textContent = label;
+        const detail = document.createElement('dd');
+        detail.textContent = String(value);
+        thresholdList.appendChild(term);
+        thresholdList.appendChild(detail);
+    });
+
+    const signerTitle = document.createElement('h3');
+    signerTitle.textContent = 'Signers';
+
+    const signerList = document.createElement('div');
+    signerList.className = 'signer-list';
+    account.signers.forEach((signer) => {
+        const row = document.createElement('div');
+        row.className = 'signer-item';
+
+        const key = document.createElement('span');
+        key.textContent = signer.key;
+
+        const weight = document.createElement('strong');
+        weight.textContent = `Weight ${signer.weight}`;
+
+        row.appendChild(key);
+        row.appendChild(weight);
+        signerList.appendChild(row);
+    });
+
+    multisigInfo.appendChild(thresholdList);
+    multisigInfo.appendChild(signerTitle);
+    multisigInfo.appendChild(signerList);
+}
+
 // Show wallet info
 function showWalletInfo() {
     walletInfo.classList.remove('hidden');
     publicKeyDisplay.textContent = currentKeypair.publicKey();
     secretKeyDisplay.textContent = currentKeypair.secret();
+    currentAccount = null;
+    renderMultisigInfo(null);
 }
 
 // Get server based on network
@@ -158,6 +228,8 @@ async function loadBalances(options = {}) {
     try {
         const server = getServer();
         const account = await server.loadAccount(currentKeypair.publicKey());
+        currentAccount = account;
+        renderMultisigInfo(account);
 
         balancesContainer.innerHTML = '';
         if (!account.balances.length) {
@@ -173,6 +245,8 @@ async function loadBalances(options = {}) {
             balancesContainer.appendChild(div);
         });
     } catch (e) {
+        currentAccount = null;
+        renderMultisigInfo(null);
         renderMessage(balancesContainer, 'error', 'Unable to load balances', e.message || 'The account could not be reached.');
     } finally {
         if (manualRefresh) {
@@ -180,6 +254,76 @@ async function loadBalances(options = {}) {
         }
     }
 }
+
+addSignerBtn.addEventListener('click', async () => {
+    if (!currentKeypair) {
+        renderMessage(multisigResult, 'error', 'Wallet required', 'Load a wallet before adding a signer.');
+        return;
+    }
+
+    const signerPublicKey = signerPublicKeyInput.value.trim();
+    const weight = Number.parseInt(signerWeightInput.value, 10);
+
+    if (!isValidPublicKey(signerPublicKey)) {
+        renderMessage(multisigResult, 'error', 'Invalid signer', 'Enter a valid Stellar public key for the signer.');
+        return;
+    }
+
+    if (!Number.isInteger(weight) || weight < 0 || weight > 255) {
+        renderMessage(multisigResult, 'error', 'Invalid weight', 'Signer weight must be an integer from 0 to 255.');
+        return;
+    }
+
+    renderMessage(multisigResult, 'info', 'Submitting signer update', 'The signer update transaction is being submitted.');
+
+    try {
+        const server = getServer();
+        const sourceAccount = await server.loadAccount(currentKeypair.publicKey());
+        const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+            fee: StellarSdk.BASE_FEE,
+            networkPassphrase: getNetworkPassphrase()
+        })
+            .addOperation(StellarSdk.Operation.setOptions({
+                signer: {
+                    ed25519PublicKey: signerPublicKey,
+                    weight
+                }
+            }))
+            .setTimeout(30)
+            .build();
+
+        transaction.sign(currentKeypair);
+        const result = await server.submitTransaction(transaction);
+        renderMessage(multisigResult, 'success', 'Signer updated', `Transaction hash: ${result.hash}`);
+        loadBalances();
+    } catch (e) {
+        renderMessage(multisigResult, 'error', 'Signer update failed', e.message || 'The signer transaction could not be submitted.');
+    }
+});
+
+signTransactionBtn.addEventListener('click', () => {
+    const transactionXdr = transactionXdrInput.value.trim();
+    const signerSecret = signerSecretKeyInput.value.trim();
+
+    if (!transactionXdr) {
+        renderMessage(multisigResult, 'error', 'Missing XDR', 'Paste a transaction XDR before signing.');
+        return;
+    }
+
+    if (!isValidSecretKey(signerSecret)) {
+        renderMessage(multisigResult, 'error', 'Invalid signer secret', 'Enter a valid Stellar secret key for the signer.');
+        return;
+    }
+
+    try {
+        const transaction = new StellarSdk.Transaction(transactionXdr, getNetworkPassphrase());
+        transaction.sign(StellarSdk.Keypair.fromSecret(signerSecret));
+        transactionXdrInput.value = transaction.toXDR();
+        renderMessage(multisigResult, 'success', 'XDR signed', 'The transaction XDR now includes the provided signer signature.');
+    } catch (e) {
+        renderMessage(multisigResult, 'error', 'Signing failed', e.message || 'The XDR could not be parsed or signed.');
+    }
+});
 
 // Send payment
 sendPaymentBtn.addEventListener('click', async () => {
