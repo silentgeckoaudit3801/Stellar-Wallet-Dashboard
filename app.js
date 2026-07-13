@@ -14,6 +14,9 @@ const balancesContainer = document.getElementById('balances');
 const refreshBalancesBtn = document.getElementById('refresh-balances');
 const destinationInput = document.getElementById('destination');
 const amountInput = document.getElementById('amount');
+const memoTypeSelect = document.getElementById('memo-type');
+const memoValueInput = document.getElementById('memo-value');
+const memoHelp = document.getElementById('memo-help');
 const sendPaymentBtn = document.getElementById('send-payment');
 const transactionResult = document.getElementById('transaction-result');
 const networkSelect = document.getElementById('network-select');
@@ -27,6 +30,13 @@ toggleSecretBtn.addEventListener('click', () => {
         secretKeyInput.type = 'password';
         toggleSecretBtn.textContent = 'Show';
     }
+});
+
+memoTypeSelect.addEventListener('change', () => {
+    const memoType = memoTypeSelect.value;
+    memoValueInput.disabled = memoType === 'none';
+    memoValueInput.value = memoType === 'none' ? '' : memoValueInput.value;
+    memoHelp.textContent = getMemoHelpText(memoType);
 });
 
 // Network change
@@ -73,14 +83,79 @@ refreshBalancesBtn.addEventListener('click', () => {
     loadBalances({ manualRefresh: true });
 });
 
+function getMemoHelpText(memoType) {
+    if (memoType === 'text') return 'Text memos support up to 28 UTF-8 bytes.';
+    if (memoType === 'id') return 'ID memos must be unsigned integers from 0 to 18446744073709551615.';
+    if (memoType === 'hash' || memoType === 'return') return 'Hash and return memos require exactly 64 hex characters.';
+    return 'No memo will be included with this payment.';
+}
+
+function getUtf8ByteLength(value) {
+    return new TextEncoder().encode(value).length;
+}
+
+function hexToBytes(hex) {
+    const bytes = new Uint8Array(32);
+
+    for (let i = 0; i < bytes.length; i += 1) {
+        bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    }
+
+    return bytes;
+}
+
+function buildMemo(type, value) {
+    const memoType = type || 'none';
+    const memoValue = value.trim();
+
+    if (memoType === 'none') return StellarSdk.Memo.none();
+
+    if (!memoValue) {
+        throw new Error('Memo value is required for the selected memo type.');
+    }
+
+    if (memoType === 'text') {
+        if (getUtf8ByteLength(memoValue) > 28) {
+            throw new Error('Text memo must be 28 UTF-8 bytes or fewer.');
+        }
+        return StellarSdk.Memo.text(memoValue);
+    }
+
+    if (memoType === 'id') {
+        if (!/^\d+$/.test(memoValue)) {
+            throw new Error('Memo ID must be an unsigned integer.');
+        }
+
+        const id = BigInt(memoValue);
+        if (id > 18446744073709551615n) {
+            throw new Error('Memo ID must fit in uint64.');
+        }
+
+        return StellarSdk.Memo.id(memoValue);
+    }
+
+    if (memoType === 'hash' || memoType === 'return') {
+        if (!/^[0-9a-fA-F]{64}$/.test(memoValue)) {
+            throw new Error('Hash and return memos must be 64 hex characters.');
+        }
+
+        const bytes = hexToBytes(memoValue);
+        return memoType === 'hash'
+            ? StellarSdk.Memo.hash(bytes)
+            : StellarSdk.Memo.return(bytes);
+    }
+
+    throw new Error('Unsupported memo type.');
+}
+
 function setRefreshButtonState(isLoading) {
     if (!refreshBalancesBtn) return;
 
     refreshBalancesBtn.disabled = isLoading;
     refreshBalancesBtn.classList.toggle('is-loading', isLoading);
     refreshBalancesBtn.innerHTML = isLoading
-        ? '<span class="refresh-icon" aria-hidden="true">⟳</span><span class="refresh-label">Refreshing…</span>'
-        : '<span class="refresh-icon" aria-hidden="true">↻</span><span class="refresh-label">Refresh</span>';
+        ? '<span class="refresh-icon" aria-hidden="true">âŸ³</span><span class="refresh-label">Refreshingâ€¦</span>'
+        : '<span class="refresh-icon" aria-hidden="true">â†»</span><span class="refresh-label">Refresh</span>';
 }
 
 function renderMessage(container, type, title, message) {
@@ -94,7 +169,7 @@ function renderMessage(container, type, title, message) {
 
     const icon = document.createElement('span');
     icon.className = 'message-icon';
-    icon.textContent = type === 'error' ? '⚠' : type === 'success' ? '✓' : 'ℹ';
+    icon.textContent = type === 'error' ? 'âš ' : type === 'success' ? 'âœ“' : 'â„¹';
 
     const body = document.createElement('div');
     body.className = 'message-body';
@@ -109,7 +184,7 @@ function renderMessage(container, type, title, message) {
     dismissButton.type = 'button';
     dismissButton.className = 'message-dismiss';
     dismissButton.setAttribute('aria-label', 'Dismiss message');
-    dismissButton.textContent = '×';
+    dismissButton.textContent = 'Ã—';
     dismissButton.addEventListener('click', () => {
         messageBox.remove();
         if (!container.hasChildNodes()) {
@@ -196,6 +271,14 @@ sendPaymentBtn.addEventListener('click', async () => {
         return;
     }
 
+    let memo;
+    try {
+        memo = buildMemo(memoTypeSelect.value, memoValueInput.value);
+    } catch (e) {
+        renderMessage(transactionResult, 'error', 'Invalid memo', e.message);
+        return;
+    }
+
     renderMessage(transactionResult, 'info', 'Sending payment', 'The transaction is being submitted.');
 
     try {
@@ -206,6 +289,7 @@ sendPaymentBtn.addEventListener('click', async () => {
             fee: StellarSdk.BASE_FEE,
             networkPassphrase: getNetworkPassphrase()
         })
+            .addMemo(memo)
             .addOperation(StellarSdk.Operation.payment({
                 destination: destination,
                 asset: StellarSdk.Asset.native(),
@@ -223,3 +307,5 @@ sendPaymentBtn.addEventListener('click', async () => {
         renderMessage(transactionResult, 'error', 'Payment failed', e.message || 'The payment could not be submitted.');
     }
 });
+
+memoTypeSelect.dispatchEvent(new Event('change'));
