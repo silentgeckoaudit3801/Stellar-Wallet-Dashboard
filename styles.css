@@ -95,6 +95,35 @@ button:hover {
     word-break: break-all;
 }
 
+.key-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.copy-button {
+    padding: 6px 10px;
+    font-size: 0.875rem;
+}
+
+.copy-button:focus-visible {
+    outline: 3px solid #111827;
+    outline-offset: 2px;
+}
+
+.copy-status {
+    min-height: 1.25rem;
+    margin-top: 8px;
+    color: #166534;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.copy-status-error {
+    color: #991b1b;
+}
+
 .hidden {
     display: none;
 }
