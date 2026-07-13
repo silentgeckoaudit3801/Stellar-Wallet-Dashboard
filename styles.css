@@ -82,6 +82,12 @@ button:hover {
     background: #5568d3;
 }
 
+button:disabled,
+button.is-loading {
+    cursor: wait;
+    opacity: 0.75;
+}
+
 .button-group {
     display: flex;
     gap: 10px;
