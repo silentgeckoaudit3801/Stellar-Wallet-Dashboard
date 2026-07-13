@@ -59,12 +59,18 @@ label {
     font-weight: 500;
 }
 
-input, select {
+input, select, textarea {
     width: 100%;
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 1rem;
+}
+
+textarea {
+    min-height: 96px;
+    resize: vertical;
+    font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
 }
 
 button {
@@ -216,6 +222,57 @@ button:hover {
     border-bottom: none;
 }
 
+.threshold-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.threshold-grid dt,
+.threshold-grid dd {
+    padding: 8px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+}
+
+.threshold-grid dt {
+    color: #4b5563;
+    font-weight: 600;
+}
+
+.threshold-grid dd {
+    color: #111827;
+    font-weight: 700;
+}
+
+.signer-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.signer-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+}
+
+.signer-item span {
+    overflow-wrap: anywhere;
+    font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+    font-size: 0.9rem;
+}
+
+.multisig-signing {
+    margin-top: 20px;
+}
+
 .success {
     color: #28a745;
     font-weight: 500;
@@ -224,4 +281,11 @@ button:hover {
 .error {
     color: #dc3545;
     font-weight: 500;
+}
+
+@media (max-width: 640px) {
+    .threshold-grid,
+    .signer-item {
+        grid-template-columns: 1fr;
+    }
 }
