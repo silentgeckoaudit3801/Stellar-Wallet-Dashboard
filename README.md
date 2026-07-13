@@ -54,6 +54,17 @@ Stellar-Wallet-Dashboard/
 
 ## Contributing
 
+## Tests
+
+This repository includes a small Jest test suite for pure validation helpers.
+
+```bash
+npm install
+npm test
+```
+
+The current tests cover Stellar public key shape, secret key shape, positive amount formatting, and issued asset code limits.
+
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
