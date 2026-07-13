@@ -52,6 +52,18 @@ h2 {
     margin-bottom: 15px;
 }
 
+.memo-grid {
+    display: grid;
+    grid-template-columns: minmax(140px, 1fr) minmax(220px, 2fr);
+    gap: 12px;
+}
+
+.field-help {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin: -4px 0 14px;
+}
+
 label {
     display: block;
     margin-bottom: 5px;
@@ -224,4 +236,10 @@ button:hover {
 .error {
     color: #dc3545;
     font-weight: 500;
+}
+
+@media (max-width: 640px) {
+    .memo-grid {
+        grid-template-columns: 1fr;
+    }
 }
