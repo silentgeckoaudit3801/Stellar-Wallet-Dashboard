@@ -216,6 +216,58 @@ button:hover {
     border-bottom: none;
 }
 
+.danger-button {
+    background: #dc3545;
+}
+
+.danger-button:hover {
+    background: #b91c1c;
+}
+
+.trustlines-container {
+    margin-bottom: 15px;
+    min-height: 60px;
+}
+
+.trustline-item {
+    align-items: flex-start;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 12px 0;
+}
+
+.trustline-item:last-child {
+    border-bottom: none;
+}
+
+.trustline-details {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.trustline-details span {
+    color: #555;
+    overflow-wrap: anywhere;
+}
+
+.trustline-form {
+    display: grid;
+    gap: 10px;
+}
+
+@media (max-width: 560px) {
+    .trustline-item {
+        flex-direction: column;
+    }
+
+    .trustline-item button {
+        width: 100%;
+    }
+}
+
 .success {
     color: #28a745;
     font-weight: 500;
