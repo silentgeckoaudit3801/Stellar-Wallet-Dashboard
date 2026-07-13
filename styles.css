@@ -67,6 +67,18 @@ input, select {
     font-size: 1rem;
 }
 
+select:disabled {
+    background: #f3f4f6;
+    color: #777;
+    cursor: not-allowed;
+}
+
+.field-hint {
+    color: #666;
+    font-size: 0.85rem;
+    margin-top: 5px;
+}
+
 button {
     padding: 10px 20px;
     background: #667eea;
