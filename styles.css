@@ -9,6 +9,13 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     padding: 20px;
+    color: #222;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+body.dark-theme {
+    background: linear-gradient(135deg, #111827 0%, #312e81 100%);
+    color: #e5e7eb;
 }
 
 .container {
@@ -18,6 +25,12 @@ body {
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.2);
     overflow: hidden;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.dark-theme .container {
+    background: #111827;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.45);
 }
 
 header {
@@ -25,10 +38,30 @@ header {
     color: white;
     padding: 30px;
     text-align: center;
+    position: relative;
+}
+
+body.dark-theme header {
+    background: linear-gradient(135deg, #1f2937 0%, #4338ca 100%);
 }
 
 header h1 {
     font-size: 2rem;
+}
+
+.theme-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    min-width: 96px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.45);
+    color: white;
+}
+
+.theme-toggle:hover {
+    background: rgba(255,255,255,0.28);
 }
 
 main {
@@ -40,12 +73,22 @@ section {
     padding: 20px;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+body.dark-theme section {
+    background: #1f2937;
+    border-color: #374151;
 }
 
 h2 {
     color: #333;
     margin-bottom: 15px;
     font-size: 1.3rem;
+}
+
+body.dark-theme h2 {
+    color: #f9fafb;
 }
 
 .input-group {
@@ -59,12 +102,29 @@ label {
     font-weight: 500;
 }
 
+body.dark-theme label {
+    color: #d1d5db;
+}
+
 input, select {
     width: 100%;
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 1rem;
+    background: white;
+    color: #111827;
+}
+
+body.dark-theme input,
+body.dark-theme select {
+    background: #0f172a;
+    border-color: #4b5563;
+    color: #f9fafb;
+}
+
+body.dark-theme input::placeholder {
+    color: #9ca3af;
 }
 
 button {
@@ -93,6 +153,13 @@ button:hover {
     padding: 15px;
     border-radius: 6px;
     word-break: break-all;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+body.dark-theme .info-box,
+body.dark-theme .result-box {
+    background: #0f172a;
+    color: #e5e7eb;
 }
 
 .hidden {
@@ -105,6 +172,11 @@ button:hover {
 
 .loading {
     color: #666;
+}
+
+body.dark-theme .loading,
+body.dark-theme .empty-state {
+    color: #cbd5e1;
 }
 
 .section-heading {
@@ -126,9 +198,20 @@ button:hover {
     color: #374151;
 }
 
+body.dark-theme .icon-button {
+    background: #111827;
+    border-color: #4b5563;
+    color: #e5e7eb;
+}
+
 .icon-button:hover {
     background: #e5e7eb;
     color: #111827;
+}
+
+body.dark-theme .icon-button:hover {
+    background: #374151;
+    color: #f9fafb;
 }
 
 .icon-button:disabled {
@@ -155,10 +238,22 @@ button:hover {
     margin-top: 10px;
 }
 
+body.dark-theme .message {
+    background: #111827;
+    border-color: #4b5563;
+    color: #e5e7eb;
+}
+
 .message-error {
     background: #fef2f2;
     border-color: #fecaca;
     color: #991b1b;
+}
+
+body.dark-theme .message-error {
+    background: #450a0a;
+    border-color: #7f1d1d;
+    color: #fecaca;
 }
 
 .message-success {
@@ -167,10 +262,22 @@ button:hover {
     color: #166534;
 }
 
+body.dark-theme .message-success {
+    background: #052e16;
+    border-color: #166534;
+    color: #bbf7d0;
+}
+
 .message-info {
     background: #eff6ff;
     border-color: #bfdbfe;
     color: #1d4ed8;
+}
+
+body.dark-theme .message-info {
+    background: #172554;
+    border-color: #1d4ed8;
+    color: #bfdbfe;
 }
 
 .message-icon {
@@ -212,6 +319,10 @@ button:hover {
     justify-content: space-between;
 }
 
+body.dark-theme .balance-item {
+    border-bottom-color: #374151;
+}
+
 .balance-item:last-child {
     border-bottom: none;
 }
@@ -224,4 +335,34 @@ button:hover {
 .error {
     color: #dc3545;
     font-weight: 500;
+}
+
+body.dark-theme .success {
+    color: #86efac;
+}
+
+body.dark-theme .error {
+    color: #fca5a5;
+}
+
+@media (max-width: 560px) {
+    header {
+        padding-top: 72px;
+    }
+
+    .theme-toggle {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+    }
+}
+
+header .theme-toggle {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.45);
+    color: white;
+}
+
+header .theme-toggle:hover {
+    background: rgba(255,255,255,0.28);
 }
