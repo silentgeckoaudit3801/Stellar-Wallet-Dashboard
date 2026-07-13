@@ -1,5 +1,6 @@
 let currentKeypair = null;
 let currentNetwork = 'testnet';
+let transactionHistoryPage = null;
 
 // DOM Elements
 const secretKeyInput = document.getElementById('secret-key');
@@ -16,6 +17,9 @@ const destinationInput = document.getElementById('destination');
 const amountInput = document.getElementById('amount');
 const sendPaymentBtn = document.getElementById('send-payment');
 const transactionResult = document.getElementById('transaction-result');
+const transactionHistoryContainer = document.getElementById('transaction-history');
+const refreshHistoryBtn = document.getElementById('refresh-history');
+const loadMoreHistoryBtn = document.getElementById('load-more-history');
 const networkSelect = document.getElementById('network-select');
 
 // Toggle secret key visibility
@@ -34,6 +38,7 @@ networkSelect.addEventListener('change', (e) => {
     currentNetwork = e.target.value;
     if (currentKeypair) {
         loadBalances();
+        loadTransactionHistory();
     }
 });
 
@@ -50,6 +55,7 @@ loadWalletBtn.addEventListener('click', () => {
         showWalletInfo();
         renderMessage(walletFeedback, 'success', 'Wallet loaded', 'Balances will refresh shortly.');
         loadBalances();
+        loadTransactionHistory();
     } catch (e) {
         renderMessage(walletFeedback, 'error', 'Invalid secret key', e.message || 'The secret key could not be parsed.');
     }
@@ -62,6 +68,7 @@ generateWalletBtn.addEventListener('click', () => {
     showWalletInfo();
     renderMessage(walletFeedback, 'success', 'Wallet generated', 'Save the secret key somewhere safe.');
     loadBalances();
+    loadTransactionHistory();
 });
 
 refreshBalancesBtn.addEventListener('click', () => {
@@ -73,6 +80,21 @@ refreshBalancesBtn.addEventListener('click', () => {
     loadBalances({ manualRefresh: true });
 });
 
+refreshHistoryBtn.addEventListener('click', () => {
+    if (!currentKeypair) {
+        renderMessage(walletFeedback, 'error', 'No wallet loaded', 'Load or generate a wallet before refreshing transaction history.');
+        return;
+    }
+
+    loadTransactionHistory({ manualRefresh: true });
+});
+
+loadMoreHistoryBtn.addEventListener('click', () => {
+    if (!transactionHistoryPage) return;
+
+    loadTransactionHistory({ append: true });
+});
+
 function setRefreshButtonState(isLoading) {
     if (!refreshBalancesBtn) return;
 
@@ -81,6 +103,20 @@ function setRefreshButtonState(isLoading) {
     refreshBalancesBtn.innerHTML = isLoading
         ? '<span class="refresh-icon" aria-hidden="true">⟳</span><span class="refresh-label">Refreshing…</span>'
         : '<span class="refresh-icon" aria-hidden="true">↻</span><span class="refresh-label">Refresh</span>';
+}
+
+function setHistoryButtonState(isLoading) {
+    if (!refreshHistoryBtn) return;
+
+    refreshHistoryBtn.disabled = isLoading;
+    refreshHistoryBtn.classList.toggle('is-loading', isLoading);
+    refreshHistoryBtn.innerHTML = isLoading
+        ? '<span class="refresh-icon" aria-hidden="true">⟳</span><span class="refresh-label">Refreshing...</span>'
+        : '<span class="refresh-icon" aria-hidden="true">↻</span><span class="refresh-label">Refresh</span>';
+
+    if (loadMoreHistoryBtn) {
+        loadMoreHistoryBtn.disabled = isLoading;
+    }
 }
 
 function renderMessage(container, type, title, message) {
@@ -142,6 +178,152 @@ function getNetworkPassphrase() {
     return currentNetwork === 'public'
         ? StellarSdk.Networks.PUBLIC
         : StellarSdk.Networks.TESTNET;
+}
+
+function formatHistoryAsset(payment) {
+    if (payment.asset_type === 'native') return 'XLM';
+
+    return [payment.asset_code, payment.asset_issuer]
+        .filter(Boolean)
+        .join(':');
+}
+
+function formatHistoryAmount(payment) {
+    const amount = payment.amount || payment.starting_balance;
+    if (!amount) return 'N/A';
+
+    return `${amount} ${formatHistoryAsset(payment)}`;
+}
+
+function getHistoryDirection(payment) {
+    const publicKey = currentKeypair.publicKey();
+
+    if (payment.from === publicKey) return 'Sent';
+    if (payment.to === publicKey) return 'Received';
+    return payment.type_i === 0 ? 'Created' : payment.type.replace(/_/g, ' ');
+}
+
+function formatHistoryDate(value) {
+    if (!value) return 'Unknown date';
+
+    return new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+    }).format(new Date(value));
+}
+
+async function enrichPaymentWithTransaction(payment) {
+    if (!payment.transaction_hash) {
+        return { payment, transaction: null };
+    }
+
+    try {
+        const transaction = await getServer()
+            .transactions()
+            .transaction(payment.transaction_hash)
+            .call();
+        return { payment, transaction };
+    } catch (e) {
+        return { payment, transaction: null };
+    }
+}
+
+function renderHistoryItem(item) {
+    const { payment, transaction } = item;
+    const row = document.createElement('article');
+    row.className = 'history-item';
+
+    const memo = transaction && transaction.memo
+        ? `${transaction.memo_type}: ${transaction.memo}`
+        : 'None';
+    const date = transaction && transaction.created_at
+        ? transaction.created_at
+        : payment.created_at;
+
+    const main = document.createElement('div');
+    main.className = 'history-main';
+
+    const direction = document.createElement('strong');
+    direction.textContent = getHistoryDirection(payment);
+
+    const amount = document.createElement('span');
+    amount.textContent = formatHistoryAmount(payment);
+
+    main.appendChild(direction);
+    main.appendChild(amount);
+
+    const details = document.createElement('dl');
+    details.className = 'history-details';
+
+    [
+        ['Type', payment.type.replace(/_/g, ' ')],
+        ['Date', formatHistoryDate(date)],
+        ['Memo', memo]
+    ].forEach(([label, value]) => {
+        const item = document.createElement('div');
+        const term = document.createElement('dt');
+        const description = document.createElement('dd');
+
+        term.textContent = label;
+        description.textContent = value;
+        item.appendChild(term);
+        item.appendChild(description);
+        details.appendChild(item);
+    });
+
+    row.appendChild(main);
+    row.appendChild(details);
+
+    return row;
+}
+
+async function loadTransactionHistory(options = {}) {
+    if (!currentKeypair) return;
+
+    const { append = false, manualRefresh = false } = options;
+    setHistoryButtonState(true);
+
+    if (!append) {
+        transactionHistoryContainer.innerHTML = '<p class="loading">Loading recent transactions...</p>';
+        transactionHistoryPage = null;
+        loadMoreHistoryBtn.classList.add('hidden');
+    }
+
+    try {
+        const page = append && transactionHistoryPage
+            ? await transactionHistoryPage.next()
+            : await getServer()
+                .payments()
+                .forAccount(currentKeypair.publicKey())
+                .order('desc')
+                .limit(20)
+                .call();
+
+        const paymentRecords = page.records.filter(record =>
+            record.type === 'payment' || record.type === 'create_account'
+        );
+        const historyItems = await Promise.all(paymentRecords.map(enrichPaymentWithTransaction));
+
+        if (!append) {
+            transactionHistoryContainer.innerHTML = '';
+        }
+
+        if (!historyItems.length && !append) {
+            transactionHistoryContainer.innerHTML = '<p class="empty-state">No recent transactions found for this wallet.</p>';
+        } else {
+            historyItems.forEach(item => {
+                transactionHistoryContainer.appendChild(renderHistoryItem(item));
+            });
+        }
+
+        transactionHistoryPage = page;
+        loadMoreHistoryBtn.classList.toggle('hidden', page.records.length < 20);
+    } catch (e) {
+        renderMessage(transactionHistoryContainer, 'error', 'Unable to load transaction history', e.message || 'Horizon transaction history could not be reached.');
+        loadMoreHistoryBtn.classList.add('hidden');
+    } finally {
+        setHistoryButtonState(false);
+    }
 }
 
 // Load balances
@@ -219,6 +401,7 @@ sendPaymentBtn.addEventListener('click', async () => {
 
         renderMessage(transactionResult, 'success', 'Payment sent', `Transaction hash: ${result.hash}`);
         loadBalances();
+        loadTransactionHistory();
     } catch (e) {
         renderMessage(transactionResult, 'error', 'Payment failed', e.message || 'The payment could not be submitted.');
     }
