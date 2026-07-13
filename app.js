@@ -70,7 +70,7 @@ refreshBalancesBtn.addEventListener('click', () => {
         return;
     }
 
-    loadBalances({ manualRefresh: true });
+    loadBalances();
 });
 
 function setRefreshButtonState(isLoading) {
@@ -79,8 +79,16 @@ function setRefreshButtonState(isLoading) {
     refreshBalancesBtn.disabled = isLoading;
     refreshBalancesBtn.classList.toggle('is-loading', isLoading);
     refreshBalancesBtn.innerHTML = isLoading
-        ? '<span class="refresh-icon" aria-hidden="true">⟳</span><span class="refresh-label">Refreshing…</span>'
-        : '<span class="refresh-icon" aria-hidden="true">↻</span><span class="refresh-label">Refresh</span>';
+        ? '<span class="refresh-icon" aria-hidden="true">âŸ³</span><span class="refresh-label">Refreshingâ€¦</span>'
+        : '<span class="refresh-icon" aria-hidden="true">â†»</span><span class="refresh-label">Refresh</span>';
+}
+
+function setPaymentButtonState(isLoading) {
+    if (!sendPaymentBtn) return;
+
+    sendPaymentBtn.disabled = isLoading;
+    sendPaymentBtn.classList.toggle('is-loading', isLoading);
+    sendPaymentBtn.textContent = isLoading ? 'Sending...' : 'Send Payment';
 }
 
 function renderMessage(container, type, title, message) {
@@ -94,7 +102,7 @@ function renderMessage(container, type, title, message) {
 
     const icon = document.createElement('span');
     icon.className = 'message-icon';
-    icon.textContent = type === 'error' ? '⚠' : type === 'success' ? '✓' : 'ℹ';
+    icon.textContent = type === 'error' ? 'âš ' : type === 'success' ? 'âœ“' : 'â„¹';
 
     const body = document.createElement('div');
     body.className = 'message-body';
@@ -109,7 +117,7 @@ function renderMessage(container, type, title, message) {
     dismissButton.type = 'button';
     dismissButton.className = 'message-dismiss';
     dismissButton.setAttribute('aria-label', 'Dismiss message');
-    dismissButton.textContent = '×';
+    dismissButton.textContent = 'Ã—';
     dismissButton.addEventListener('click', () => {
         messageBox.remove();
         if (!container.hasChildNodes()) {
@@ -145,14 +153,10 @@ function getNetworkPassphrase() {
 }
 
 // Load balances
-async function loadBalances(options = {}) {
+async function loadBalances() {
     if (!currentKeypair) return;
 
-    const { manualRefresh = false } = options;
-    if (manualRefresh) {
-        setRefreshButtonState(true);
-    }
-
+    setRefreshButtonState(true);
     balancesContainer.innerHTML = '<p class="loading">Loading balances...</p>';
 
     try {
@@ -175,9 +179,7 @@ async function loadBalances(options = {}) {
     } catch (e) {
         renderMessage(balancesContainer, 'error', 'Unable to load balances', e.message || 'The account could not be reached.');
     } finally {
-        if (manualRefresh) {
-            setRefreshButtonState(false);
-        }
+        setRefreshButtonState(false);
     }
 }
 
@@ -196,6 +198,7 @@ sendPaymentBtn.addEventListener('click', async () => {
         return;
     }
 
+    setPaymentButtonState(true);
     renderMessage(transactionResult, 'info', 'Sending payment', 'The transaction is being submitted.');
 
     try {
@@ -221,5 +224,7 @@ sendPaymentBtn.addEventListener('click', async () => {
         loadBalances();
     } catch (e) {
         renderMessage(transactionResult, 'error', 'Payment failed', e.message || 'The payment could not be submitted.');
+    } finally {
+        setPaymentButtonState(false);
     }
 });
