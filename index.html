@@ -58,6 +58,34 @@
                 <div id="transaction-result" class="result-box hidden"></div>
             </section>
 
+            <section class="multisig-section">
+                <h2>Multi-Signature</h2>
+                <div id="multisig-info" class="info-box">
+                    <p class="loading">Load a wallet to view multisig details</p>
+                </div>
+
+                <div class="input-group">
+                    <label for="signer-public-key">Second Signer Public Key:</label>
+                    <input type="text" id="signer-public-key" placeholder="G...">
+                </div>
+                <div class="input-group">
+                    <label for="signer-weight">Signer Weight:</label>
+                    <input type="number" id="signer-weight" min="0" max="255" step="1" value="1">
+                </div>
+                <button id="add-signer">Add or Update Signer</button>
+
+                <div class="input-group multisig-signing">
+                    <label for="transaction-xdr">Transaction XDR to Sign:</label>
+                    <textarea id="transaction-xdr" rows="4" placeholder="AAAA..."></textarea>
+                </div>
+                <div class="input-group">
+                    <label for="signer-secret-key">Signer Secret Key:</label>
+                    <input type="password" id="signer-secret-key" placeholder="S...">
+                </div>
+                <button id="sign-transaction">Sign XDR</button>
+                <div id="multisig-result" class="result-box hidden"></div>
+            </section>
+
             <section class="network-section">
                 <h2>Network</h2>
                 <select id="network-select">
