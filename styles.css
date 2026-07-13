@@ -95,6 +95,75 @@ button:hover {
     word-break: break-all;
 }
 
+.key-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.copy-button {
+    padding: 6px 10px;
+    font-size: 0.875rem;
+}
+
+.danger-button {
+    background: #b91c1c;
+}
+
+.danger-button:hover {
+    background: #991b1b;
+}
+
+.copy-status {
+    min-height: 1.25rem;
+    margin-top: 8px;
+    color: #166534;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.copy-status-error {
+    color: #991b1b;
+}
+
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(17, 24, 39, 0.65);
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-card {
+    max-width: 460px;
+    width: 100%;
+    padding: 24px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #111827;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-card p {
+    margin-bottom: 12px;
+}
+
+.modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 18px;
+}
+
 .hidden {
     display: none;
 }
