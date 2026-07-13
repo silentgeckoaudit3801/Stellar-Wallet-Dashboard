@@ -1,5 +1,6 @@
 let currentKeypair = null;
 let currentNetwork = 'testnet';
+let currentBalances = [];
 
 // DOM Elements
 const secretKeyInput = document.getElementById('secret-key');
@@ -13,6 +14,7 @@ const secretKeyDisplay = document.getElementById('secret-key-display');
 const balancesContainer = document.getElementById('balances');
 const refreshBalancesBtn = document.getElementById('refresh-balances');
 const destinationInput = document.getElementById('destination');
+const assetSelect = document.getElementById('asset-select');
 const amountInput = document.getElementById('amount');
 const sendPaymentBtn = document.getElementById('send-payment');
 const transactionResult = document.getElementById('transaction-result');
@@ -144,6 +146,69 @@ function getNetworkPassphrase() {
         : StellarSdk.Networks.TESTNET;
 }
 
+function getAssetKey(balance) {
+    if (balance.asset_type === 'native') return 'native';
+
+    return `${balance.asset_type}:${balance.asset_code}:${balance.asset_issuer}`;
+}
+
+function getAssetLabel(balance) {
+    if (balance.asset_type === 'native') return 'XLM (native)';
+
+    return `${balance.asset_code} - ${balance.asset_issuer.slice(0, 6)}...${balance.asset_issuer.slice(-6)}`;
+}
+
+function updateAssetOptions(balances = []) {
+    currentBalances = balances;
+    assetSelect.innerHTML = '';
+
+    balances.forEach(balance => {
+        const option = document.createElement('option');
+        option.value = getAssetKey(balance);
+        option.textContent = getAssetLabel(balance);
+        assetSelect.appendChild(option);
+    });
+
+    if (!balances.length) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No funded assets available';
+        assetSelect.appendChild(option);
+    }
+
+    assetSelect.disabled = !currentKeypair || !balances.length;
+}
+
+function getSelectedBalance() {
+    return currentBalances.find(balance => getAssetKey(balance) === assetSelect.value);
+}
+
+function getSelectedAsset() {
+    const balance = getSelectedBalance();
+
+    if (!balance || balance.asset_type === 'native') {
+        return StellarSdk.Asset.native();
+    }
+
+    return new StellarSdk.Asset(balance.asset_code, balance.asset_issuer);
+}
+
+function validateSelectedAssetTrustline() {
+    const selectedBalance = getSelectedBalance();
+
+    if (!selectedBalance) {
+        renderMessage(transactionResult, 'error', 'Asset unavailable', 'Refresh balances and select an asset from the loaded wallet trustlines.');
+        return false;
+    }
+
+    if (selectedBalance.asset_type !== 'native' && !selectedBalance.asset_issuer) {
+        renderMessage(transactionResult, 'error', 'Invalid asset', 'The selected custom asset is missing its issuer.');
+        return false;
+    }
+
+    return true;
+}
+
 // Load balances
 async function loadBalances(options = {}) {
     if (!currentKeypair) return;
@@ -162,17 +227,20 @@ async function loadBalances(options = {}) {
         balancesContainer.innerHTML = '';
         if (!account.balances.length) {
             balancesContainer.innerHTML = '<p class="empty-state">This account does not have any balances yet.</p>';
+            updateAssetOptions([]);
             return;
         }
 
+        updateAssetOptions(account.balances);
         account.balances.forEach(balance => {
             const div = document.createElement('div');
             div.className = 'balance-item';
-            const asset = balance.asset_type === 'native' ? 'XLM' : balance.asset_code;
+            const asset = balance.asset_type === 'native' ? 'XLM' : `${balance.asset_code} (${balance.asset_type})`;
             div.innerHTML = `<span>${asset}</span><span>${balance.balance}</span>`;
             balancesContainer.appendChild(div);
         });
     } catch (e) {
+        updateAssetOptions([]);
         renderMessage(balancesContainer, 'error', 'Unable to load balances', e.message || 'The account could not be reached.');
     } finally {
         if (manualRefresh) {
@@ -196,6 +264,10 @@ sendPaymentBtn.addEventListener('click', async () => {
         return;
     }
 
+    if (!validateSelectedAssetTrustline()) {
+        return;
+    }
+
     renderMessage(transactionResult, 'info', 'Sending payment', 'The transaction is being submitted.');
 
     try {
@@ -208,7 +280,7 @@ sendPaymentBtn.addEventListener('click', async () => {
         })
             .addOperation(StellarSdk.Operation.payment({
                 destination: destination,
-                asset: StellarSdk.Asset.native(),
+                asset: getSelectedAsset(),
                 amount: amount
             }))
             .setTimeout(30)
