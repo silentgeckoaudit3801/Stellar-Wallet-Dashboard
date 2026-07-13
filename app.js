@@ -17,6 +17,43 @@ const amountInput = document.getElementById('amount');
 const sendPaymentBtn = document.getElementById('send-payment');
 const transactionResult = document.getElementById('transaction-result');
 const networkSelect = document.getElementById('network-select');
+const themeToggleBtn = document.getElementById('theme-toggle');
+
+function applyTheme(theme) {
+    const isDark = theme === 'dark';
+    document.body.classList.toggle('dark-theme', isDark);
+
+    if (themeToggleBtn) {
+        themeToggleBtn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+        themeToggleBtn.setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
+    }
+}
+
+function getStoredTheme() {
+    try {
+        return localStorage.getItem('stellar-dashboard-theme') || 'light';
+    } catch (e) {
+        return 'light';
+    }
+}
+
+function saveTheme(theme) {
+    try {
+        localStorage.setItem('stellar-dashboard-theme', theme);
+    } catch (e) {
+        // Theme switching still works for the current page if storage is unavailable.
+    }
+}
+
+applyTheme(getStoredTheme());
+
+if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+        const nextTheme = document.body.classList.contains('dark-theme') ? 'light' : 'dark';
+        applyTheme(nextTheme);
+        saveTheme(nextTheme);
+    });
+}
 
 // Toggle secret key visibility
 toggleSecretBtn.addEventListener('click', () => {
