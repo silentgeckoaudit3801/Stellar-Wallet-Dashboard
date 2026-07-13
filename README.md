@@ -10,9 +10,9 @@ Beyond its utility as a wallet, this project serves as a clean reference impleme
 - Generate new Stellar keypairs
 - Load existing wallets using secret keys
 - View XLM and asset balances
--  Send payment transactions
--  Switch between testnet and mainnet
--  
+- Send payment transactions
+- Switch between testnet and mainnet
+
 ## Getting Started
 
 ## Examples
@@ -30,8 +30,8 @@ You just need a web browser! No installation required.
 3. Generate a new wallet or load an existing one
 4. Start managing your Stellar account!
 
-   
 ### Clone the Repository
+
 ```bash
 git clone https://github.com/Dot-Voidz/Stellar-Wallet-Dashboard.git
 cd Stellar-Wallet-Dashboard
@@ -39,18 +39,32 @@ cd Stellar-Wallet-Dashboard
 
 ### Testnet Faucet
 
-To get testnet XLM for testing, visit the [Stellar Laboratory Faucet](https://laboratory.stellar.org/#account-creator?network=test).
-Stellar-Wallet-Dashboard/
-├── public/              # Static assets and index.html
-├── src/
-│   ├── components/      # UI components (Navbar, BalanceCard, PaymentForm)
-│   ├── services/        # Stellar SDK abstractions & Horizon API calls
-│   ├── hooks/           # Custom state and wallet lifecycle hooks
-│   ├── App.js           # Main application entry point & router
-│   └── index.js         # React DOM initialization
-├── .env.example         # Template for environment configurations
-└── README.md
+Testnet XLM is practice currency for the Stellar test network. It lets you
+generate wallets, refresh balances, and send payments without using real funds
+on mainnet.
 
+1. Open the dashboard and make sure the network selector is set to `Testnet`.
+2. Generate a new wallet or load a testnet wallet.
+3. Copy the public key that starts with `G`.
+4. Visit the [Stellar Laboratory Faucet](https://laboratory.stellar.org/#account-creator?network=test).
+5. Paste the public key into the account creator form.
+6. Submit the form to fund the account with testnet XLM.
+7. Return to the dashboard and refresh balances.
+
+If the balance does not appear immediately, wait a few seconds and refresh
+again. Testnet resets can occasionally clear funded accounts, so repeat these
+steps whenever a test account needs fresh funds.
+
+## Project Structure
+
+```text
+Stellar-Wallet-Dashboard/
+|-- index.html
+|-- app.js
+|-- styles.css
+|-- examples/
+`-- README.md
+```
 
 ## Contributing
 
