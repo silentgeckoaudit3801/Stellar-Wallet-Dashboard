@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>💧 Stellar Wallet Dashboard</h1>
+            <h1>ðŸ’§ Stellar Wallet Dashboard</h1>
         </header>
 
         <main>
@@ -27,7 +27,12 @@
                 <div id="wallet-feedback" class="result-box hidden"></div>
                 <div id="wallet-info" class="info-box hidden">
                     <p><strong>Public Key:</strong> <span id="public-key"></span></p>
-                    <p><strong>Secret Key:</strong> <span id="secret-key-display"></span></p>
+                    <p class="key-row">
+                        <strong>Secret Key:</strong>
+                        <span id="secret-key-display"></span>
+                        <button id="copy-secret-key" class="copy-button danger-button" type="button">Copy Secret Key</button>
+                    </p>
+                    <p id="copy-secret-key-status" class="copy-status" aria-live="polite"></p>
                 </div>
             </section>
 
@@ -35,7 +40,7 @@
                 <div class="section-heading">
                     <h2>Balances</h2>
                     <button id="refresh-balances" class="icon-button" type="button" aria-label="Refresh balances">
-                        <span class="refresh-icon" aria-hidden="true">↻</span>
+                        <span class="refresh-icon" aria-hidden="true">â†»</span>
                         <span class="refresh-label">Refresh</span>
                     </button>
                 </div>
@@ -66,6 +71,18 @@
                 </select>
             </section>
         </main>
+    </div>
+
+    <div id="secret-copy-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="secret-copy-title">
+        <div class="modal-card">
+            <h2 id="secret-copy-title">Confirm Secret Key Copy</h2>
+            <p><strong>Warning: anyone with this secret key has full access to this wallet and its funds.</strong></p>
+            <p>Only copy it if you are storing it somewhere private and trusted.</p>
+            <div class="modal-actions">
+                <button id="confirm-copy-secret-key" class="danger-button" type="button">I Understand, Copy</button>
+                <button id="cancel-copy-secret-key" type="button">Cancel</button>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stellar-sdk/11.0.1/stellar-sdk.min.js"></script>
