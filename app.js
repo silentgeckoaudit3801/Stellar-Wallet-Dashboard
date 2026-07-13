@@ -16,7 +16,16 @@ const destinationInput = document.getElementById('destination');
 const amountInput = document.getElementById('amount');
 const sendPaymentBtn = document.getElementById('send-payment');
 const transactionResult = document.getElementById('transaction-result');
+const paymentConfirmModal = document.getElementById('payment-confirm-modal');
+const confirmDestination = document.getElementById('confirm-destination');
+const confirmAmount = document.getElementById('confirm-amount');
+const confirmAsset = document.getElementById('confirm-asset');
+const confirmMemo = document.getElementById('confirm-memo');
+const confirmFee = document.getElementById('confirm-fee');
+const cancelPaymentBtn = document.getElementById('cancel-payment');
+const confirmPaymentBtn = document.getElementById('confirm-payment');
 const networkSelect = document.getElementById('network-select');
+let pendingPayment = null;
 
 // Toggle secret key visibility
 toggleSecretBtn.addEventListener('click', () => {
@@ -144,6 +153,37 @@ function getNetworkPassphrase() {
         : StellarSdk.Networks.TESTNET;
 }
 
+function openPaymentConfirmModal(details) {
+    pendingPayment = details;
+    confirmDestination.textContent = details.destination;
+    confirmAmount.textContent = details.amount;
+    confirmAsset.textContent = details.asset;
+    confirmMemo.textContent = details.memo || 'None';
+    confirmFee.textContent = `${details.fee} stroops`;
+    paymentConfirmModal.classList.remove('hidden');
+    confirmPaymentBtn.focus();
+}
+
+function closePaymentConfirmModal() {
+    pendingPayment = null;
+    paymentConfirmModal.classList.add('hidden');
+    sendPaymentBtn.focus();
+}
+
+cancelPaymentBtn.addEventListener('click', closePaymentConfirmModal);
+
+paymentConfirmModal.addEventListener('click', (event) => {
+    if (event.target === paymentConfirmModal) {
+        closePaymentConfirmModal();
+    }
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !paymentConfirmModal.classList.contains('hidden')) {
+        closePaymentConfirmModal();
+    }
+});
+
 // Load balances
 async function loadBalances(options = {}) {
     if (!currentKeypair) return;
@@ -196,7 +236,21 @@ sendPaymentBtn.addEventListener('click', async () => {
         return;
     }
 
+    openPaymentConfirmModal({
+        destination,
+        amount,
+        asset: 'XLM',
+        memo: 'None',
+        fee: StellarSdk.BASE_FEE
+    });
+});
+
+confirmPaymentBtn.addEventListener('click', async () => {
+    if (!pendingPayment || !currentKeypair) return;
+
     renderMessage(transactionResult, 'info', 'Sending payment', 'The transaction is being submitted.');
+    confirmPaymentBtn.disabled = true;
+    cancelPaymentBtn.disabled = true;
 
     try {
         const server = getServer();
@@ -207,9 +261,9 @@ sendPaymentBtn.addEventListener('click', async () => {
             networkPassphrase: getNetworkPassphrase()
         })
             .addOperation(StellarSdk.Operation.payment({
-                destination: destination,
+                destination: pendingPayment.destination,
                 asset: StellarSdk.Asset.native(),
-                amount: amount
+                amount: pendingPayment.amount
             }))
             .setTimeout(30)
             .build();
@@ -217,9 +271,13 @@ sendPaymentBtn.addEventListener('click', async () => {
         transaction.sign(currentKeypair);
         const result = await server.submitTransaction(transaction);
 
+        closePaymentConfirmModal();
         renderMessage(transactionResult, 'success', 'Payment sent', `Transaction hash: ${result.hash}`);
         loadBalances();
     } catch (e) {
         renderMessage(transactionResult, 'error', 'Payment failed', e.message || 'The payment could not be submitted.');
+    } finally {
+        confirmPaymentBtn.disabled = false;
+        cancelPaymentBtn.disabled = false;
     }
 });
