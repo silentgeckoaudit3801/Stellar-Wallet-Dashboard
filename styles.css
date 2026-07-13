@@ -9,10 +9,12 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     padding: 20px;
+    color: #222;
 }
 
 .container {
     max-width: 800px;
+    width: 100%;
     margin: 0 auto;
     background: white;
     border-radius: 12px;
@@ -61,13 +63,15 @@ label {
 
 input, select {
     width: 100%;
-    padding: 10px;
+    min-height: 44px;
+    padding: 10px 12px;
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 1rem;
 }
 
 button {
+    min-height: 44px;
     padding: 10px 20px;
     background: #667eea;
     color: white;
@@ -84,15 +88,39 @@ button:hover {
 
 .button-group {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 15px;
+}
+
+.button-group button {
+    flex: 1 1 180px;
 }
 
 .info-box, .result-box {
     background: #f0f0f0;
     padding: 15px;
     border-radius: 6px;
-    word-break: break-all;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.wallet-info p {
+    display: grid;
+    grid-template-columns: minmax(88px, max-content) minmax(0, 1fr);
+    gap: 6px 10px;
+    align-items: start;
+    margin-bottom: 10px;
+}
+
+.wallet-info p:last-child {
+    margin-bottom: 0;
+}
+
+.key-value {
+    min-width: 0;
+    font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+    line-height: 1.45;
 }
 
 .hidden {
@@ -209,7 +237,9 @@ button:hover {
     padding: 10px;
     border-bottom: 1px solid #eee;
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
+    gap: 8px 12px;
 }
 
 .balance-item:last-child {
@@ -224,4 +254,99 @@ button:hover {
 .error {
     color: #dc3545;
     font-weight: 500;
+}
+
+@media (max-width: 640px) {
+    body {
+        padding: 12px;
+    }
+
+    header {
+        padding: 24px 18px;
+    }
+
+    header h1 {
+        font-size: 1.65rem;
+        line-height: 1.2;
+    }
+
+    main {
+        padding: 18px;
+    }
+
+    section {
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .section-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .icon-button,
+    #send-payment {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .message {
+        gap: 8px;
+    }
+
+    .message-body {
+        min-width: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 0;
+        background: white;
+    }
+
+    .container {
+        min-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    header {
+        padding: 20px 14px;
+    }
+
+    header h1 {
+        font-size: 1.45rem;
+    }
+
+    main {
+        padding: 14px;
+    }
+
+    section {
+        padding: 14px;
+        border-radius: 6px;
+    }
+
+    h2 {
+        font-size: 1.15rem;
+    }
+
+    .button-group {
+        flex-direction: column;
+    }
+
+    .button-group button,
+    #toggle-secret {
+        width: 100%;
+    }
+
+    .wallet-info p {
+        grid-template-columns: 1fr;
+    }
+
+    .balance-item {
+        align-items: flex-start;
+        flex-direction: column;
+    }
 }
