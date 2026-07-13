@@ -51,7 +51,14 @@
                     <input type="text" id="destination" placeholder="G...">
                 </div>
                 <div class="input-group">
-                    <label for="amount">Amount (XLM):</label>
+                    <label for="asset-select">Asset:</label>
+                    <select id="asset-select" disabled>
+                        <option value="native">XLM (native)</option>
+                    </select>
+                    <p class="field-hint">Load a wallet to populate custom assets from its trustlines.</p>
+                </div>
+                <div class="input-group">
+                    <label for="amount">Amount:</label>
                     <input type="number" id="amount" step="0.0000001" placeholder="0.0">
                 </div>
                 <button id="send-payment">Send Payment</button>
